@@ -1,0 +1,15 @@
+{
+  "projects": {
+    "default": "payal-creation"
+  },
+  "targets": {
+    "payal-creation": {
+      "hosting": {
+        "website": [
+          "payal-creation"
+        ]
+      }
+    }
+  },
+  "etags": {}
+}

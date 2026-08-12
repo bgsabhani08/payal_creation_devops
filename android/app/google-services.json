@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "700099258867",
+    "project_id": "payal-creation",
+    "storage_bucket": "payal-creation.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:700099258867:android:341e932da89090f71b8a86",
+        "android_client_info": {
+          "package_name": "com.example.payal_creation"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVcLrHoLMTi5tBvt-zuUumi_omZMSiaPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:700099258867:android:2387d7d02a10e64b1b8a86",
+        "android_client_info": {
+          "package_name": "com.example.payal_creation_admin"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVcLrHoLMTi5tBvt-zuUumi_omZMSiaPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:700099258867:android:925598dcf45efa391b8a86",
+        "android_client_info": {
+          "package_name": "com.example.payal_creation_user"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDVcLrHoLMTi5tBvt-zuUumi_omZMSiaPg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
