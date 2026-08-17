@@ -30,4 +30,4 @@ jobs:
         run: flutter build web
 
       - name: Build Docker image
-        run: Docker build -t payal-creation-web:ci .
+        run: docker build -t payal-creation-web:ci .
