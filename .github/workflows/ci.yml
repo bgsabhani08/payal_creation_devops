@@ -11,7 +11,7 @@ permissions:
 
 jobs:
   deploy:
-    runs-on: ubuntu-Latest
+    runs-on: ubuntu-latest
 
     steps:
       - name: Download repository
@@ -33,6 +33,12 @@ jobs:
       - name: Build Docker image
         run: docker build -t payal-creation-web:ci .
 
+      - name: Debug OIDC context
+        run: |
+          echo "Repo: $GITHUB_REPOSITORY"
+          echo "Ref: $GITHUB_REF"
+          echo "Role ARN var: ${{ vars.AWS_ROLE_ARN }}"
+
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
@@ -46,4 +52,4 @@ jobs:
         run: docker tag payal-creation-web:ci ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:ci
 
       - name: Push docker image to Amazon ECR
-        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_POSITORY }}:ci
+        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:ci
