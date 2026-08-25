@@ -31,7 +31,7 @@ jobs:
         run: flutter build web
 
       - name: Build Docker image
-        run: docker build -t payal-creation-web:ci .
+        run: docker build -t payal-creation-web:${{ github.sha }} .
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -43,7 +43,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v1
         
       - name: Tag docker image
-        run: docker tag payal-creation-web:ci ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:ci
+        run: docker tag payal-creation-web:${{ github.sha }} ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
       - name: Push docker image to Amazon ECR
-        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:ci
+        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
