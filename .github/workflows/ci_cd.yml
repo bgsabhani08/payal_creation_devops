@@ -14,44 +14,80 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # -------------------------
+      # 1. Get source code
+      # -------------------------
       - name: Download repository
         uses: actions/checkout@v4
 
+      # -------------------------
+      # 2. Setup Flutter
+      # -------------------------
       - name: Install Flutter
         uses: subosito/flutter-action@v2
 
       - name: Install dependencies
         run: flutter pub get
 
+      # -------------------------
+      # 3. Test application
+      # -------------------------
       - name: Run tests
         run: flutter test
 
+      # -------------------------
+      # 4. Build Flutter web
+      # -------------------------
       - name: Build web app
         run: flutter build web
 
+      # -------------------------
+      # 5. Build Docker image
+      # -------------------------
       - name: Build Docker image
-        run: docker build -t payal-creation-web:${{ github.sha }} .
+        run: |
+          docker build \
+            -t payal-creation-web:${{ github.sha }} .
 
+      # -------------------------
+      # 6. Configure AWS
+      # -------------------------
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-region: ${{ vars.AWS_REGION }}
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
 
+      # -------------------------
+      # 7. Login to ECR
+      # -------------------------
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
 
+      # -------------------------
+      # 8. Tag Docker image
+      # -------------------------
       - name: Tag Docker image
         run: |
           docker tag \
             payal-creation-web:${{ github.sha }} \
             ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
+      # -------------------------
+      # 9. Push image to ECR
+      # -------------------------
       - name: Push Docker image to Amazon ECR
         run: |
           docker push \
             ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
+      # =====================================================
+      # EC2 DEPLOYMENT
+      # =====================================================
+
+      # -------------------------
+      # 10. Tell EC2 which image to use
+      # -------------------------
       - name: Update EC2 image tag
         run: |
           aws ssm put-parameter \
@@ -61,9 +97,47 @@ jobs:
             --overwrite \
             --region "${{ vars.AWS_REGION }}"
 
+      # -------------------------
+      # 11. Refresh EC2 instances
+      # -------------------------
       - name: Start EC2 instance refresh
         run: |
           aws autoscaling start-instance-refresh \
             --auto-scaling-group-name "payal-creation-ASG" \
             --preferences MinHealthyPercentage=100,InstanceWarmup=120 \
             --region "${{ vars.AWS_REGION }}"
+
+      # =====================================================
+      # ECS DEPLOYMENT
+      # =====================================================
+
+      # -------------------------
+      # 12. Get current ECS task definition
+      # -------------------------
+      - name: Download current ECS task definition
+        run: |
+          aws ecs describe-task-definition \
+            --task-definition payal-creation-web-task \
+            --query taskDefinition > task-definition.json
+
+      # -------------------------
+      # 13. Replace ECS image
+      # -------------------------
+      - name: Update ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@v1
+        with:
+          task-definition: task-definition.json
+          container-name: payal-creation-web-container
+          image: ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+
+      # -------------------------
+      # 14. Deploy new ECS task
+      # -------------------------
+      - name: Deploy to ECS
+        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: payal-creation-web-task-service
+          cluster: payal-creation-web-cluster
+          wait-for-service-stability: true
