@@ -10,23 +10,22 @@ permissions:
   contents: read
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Download repository
         uses: actions/checkout@v4
-  
-      - name: Install flutter
+
+      - name: Install Flutter
         uses: subosito/flutter-action@v2
-        
 
       - name: Install dependencies
         run: flutter pub get
-  
+
       - name: Run tests
         run: flutter test
-  
+
       - name: Build web app
         run: flutter build web
 
@@ -40,31 +39,31 @@ jobs:
           role-to-assume: ${{ vars.AWS_ROLE_ARN }}
 
       - name: Login to Amazon ECR
-        uses: aws-actions/amazon-ecr-login@v1
-        
-      - name: Tag docker image
-        run: docker tag payal-creation-web:${{ github.sha }} ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+        uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Push docker image to Amazon ECR
-        run: docker push ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
-      - name: Download current ECS task definition
+      - name: Tag Docker image
         run: |
-          aws ecs describe-task-definition \
-            --task-definition payal-creation-web-task \
-            --query taskDefinition > task-definition.json
+          docker tag \
+            payal-creation-web:${{ github.sha }} \
+            ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
-      - name: Update ECS task definition
-        id: task-def
-        uses: aws-actions/amazon-ecs-render-task-definition@v1
-        with:
-          task-definition: task-definition.json
-          container-name: payal-creation-web-container
-          image: ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
+      - name: Push Docker image to Amazon ECR
+        run: |
+          docker push \
+            ${{ vars.ECR_REGISTRY }}/${{ vars.ECR_REPOSITORY }}:${{ github.sha }}
 
-      - name: Deploy to ECS
-        uses: aws-actions/amazon-ecs-deploy-task-definition@v2
-        with:
-          task-definition: ${{ steps.task-def.outputs.task-definition }}
-          service: payal-creation-web-task-service
-          cluster: payal-creation-web-cluster
-          wait-for-service-stability: true
+      - name: Update EC2 image tag
+        run: |
+          aws ssm put-parameter \
+            --name "/payal-creation/docker-image-tag" \
+            --value "${{ github.sha }}" \
+            --type "String" \
+            --overwrite \
+            --region "${{ vars.AWS_REGION }}"
+
+      - name: Start EC2 instance refresh
+        run: |
+          aws autoscaling start-instance-refresh \
+            --auto-scaling-group-name "payal-creation-ASG" \
+            --preferences MinHealthyPercentage=100,InstanceWarmup=120 \
+            --region "${{ vars.AWS_REGION }}"
